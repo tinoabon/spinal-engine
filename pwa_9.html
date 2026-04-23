@@ -1,0 +1,1894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spinal Engine">
+<meta name="theme-color" content="#0A0D0F">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Spinal Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- PWA Manifest inline -->
+<script>
+const manifestData = {
+  name: "Spinal Engine",
+  short_name: "Spinal",
+  description: "Your chiropractic activation protocol",
+  start_url: "/spinal-engine/pwa.html",
+  display: "standalone",
+  background_color: "#0A0D0F",
+  theme_color: "#0A0D0F",
+  orientation: "portrait",
+  icons: [
+    { src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%230A0D0F'/><circle cx='96' cy='96' r='28' fill='none' stroke='%238FAF94' stroke-width='6'/><circle cx='96' cy='96' r='8' fill='%23C8B89A'/></svg>", sizes: "192x192", type: "image/svg+xml" },
+    { src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%230A0D0F'/><circle cx='256' cy='256' r='76' fill='none' stroke='%238FAF94' stroke-width='16'/><circle cx='256' cy='256' r='22' fill='%23C8B89A'/></svg>", sizes: "512x512", type: "image/svg+xml" }
+  ]
+};
+const blob = new Blob([JSON.stringify(manifestData)], {type:'application/json'});
+const link = document.createElement('link');
+link.rel = 'manifest';
+link.href = URL.createObjectURL(blob);
+document.head.appendChild(link);
+</script>
+
+<style>
+:root {
+  --bg:     #0A0D0F;
+  --bg2:    #111518;
+  --bg3:    #181D21;
+  --bg4:    #1E2429;
+  --line:   #232A30;
+  --line2:  #2A3340;
+  --txt:    #E8E2D9;
+  --txt2:   #A89F94;
+  --txt3:   #6B6560;
+  --txt4:   #3D3A37;
+  --accent: #C8B89A;
+  --accent2:#8FAF94;
+  --accent3:#7BA3C4;
+  --danger: #C47A7A;
+  --warn:   #C4A87A;
+  --r:      16px;
+  --r-sm:   10px;
+  --r-lg:   22px;
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%; width: 100%;
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+
+.serif { font-family: 'DM Serif Display', serif; }
+
+/* ── SCREENS ── */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  transform: translateY(100%);
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+.screen.active { transform: translateY(0); }
+.screen.slide-left { transform: translateX(-100%); }
+.screen.slide-left.active { transform: translateX(0); }
+
+/* ── PIN SCREEN ── */
+#screen-pin {
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: calc(var(--safe-top) + 20px) 24px calc(var(--safe-bottom) + 24px);
+}
+.pin-logo {
+  display: flex; align-items: center; gap: 10px;
+}
+.pin-logo-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent2);
+  box-shadow: 0 0 12px rgba(143,175,148,.4);
+}
+.pin-logo-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px; color: var(--txt);
+  letter-spacing: .02em;
+}
+.pin-headline {
+  text-align: center;
+}
+.pin-headline h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px; color: var(--txt);
+  line-height: 1.2; margin-bottom: 6px;
+}
+.pin-headline p { font-size: 15px; color: var(--txt3); }
+.pin-dots {
+  display: flex; gap: 14px;
+}
+.pin-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--bg4);
+  border: 2px solid var(--line2);
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.pin-dot.filled { background: var(--accent); border-color: var(--accent); transform: scale(1.1); }
+.pin-dot.error { background: var(--danger); border-color: var(--danger); }
+.pin-display { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.pin-display.shake { animation: shake .4s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+
+.numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px; width: 100%; max-width: 300px;
+}
+.np-key {
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  border-radius: var(--r);
+  height: 72px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background .1s, transform .08s;
+  -webkit-user-select: none;
+}
+.np-key:active { background: var(--bg4); transform: scale(.95); }
+.np-key.del { background: transparent; border-color: var(--line); }
+.np-num { font-size: 24px; font-weight: 300; color: var(--txt); line-height: 1; }
+.np-alpha { font-size: 10px; color: var(--txt4); letter-spacing: .1em; margin-top: 2px; }
+.pin-error-msg {
+  font-size: 13px; color: var(--danger); text-align: center;
+  min-height: 18px;
+}
+
+/* ── MAIN APP ── */
+#screen-app {
+  display: flex; flex-direction: column;
+}
+
+/* ── TOP BAR ── */
+.app-topbar {
+  padding: calc(var(--safe-top) + 12px) 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-logo { display: flex; align-items: center; gap: 8px; }
+.topbar-logo-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2); }
+.topbar-logo-name { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--txt); }
+.topbar-patient {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+}
+.topbar-av {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--bg4); border: 1px solid var(--line2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 500; color: var(--txt2);
+}
+.topbar-name { font-size: 14px; color: var(--txt2); }
+
+/* ── SCROLL CONTENT ── */
+.app-content {
+  flex: 1; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--safe-bottom) + 80px);
+}
+
+/* ── TAB BAR ── */
+.tab-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: calc(60px + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--bg2);
+  border-top: 1px solid var(--line);
+  display: flex;
+  z-index: 100;
+}
+.tab-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px; cursor: pointer;
+  transition: color .15s;
+  color: var(--txt4);
+  -webkit-user-select: none;
+}
+.tab-item.active { color: var(--accent2); }
+.tab-icon { font-size: 20px; line-height: 1; }
+.tab-label { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+
+/* ── TAB PANELS ── */
+.tab-panel { display: none; padding: 20px; }
+.tab-panel.active { display: block; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.card-hd {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-size: 13px; font-weight: 500; color: var(--txt2); text-transform: uppercase; letter-spacing: .06em; }
+.card-body { padding: 16px 18px; }
+
+/* ── HOME TAB ── */
+.home-hero {
+  background: linear-gradient(135deg, rgba(143,175,148,.08) 0%, transparent 60%);
+  border: 1px solid rgba(143,175,148,.15);
+  border-radius: var(--r-lg);
+  padding: 24px 20px;
+  margin-bottom: 14px;
+}
+.home-greeting {
+  font-size: 13px; color: var(--txt3); margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.home-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px; color: var(--txt);
+  line-height: 1.1; margin-bottom: 4px;
+}
+.home-plan {
+  font-size: 13px; color: var(--accent);
+}
+.home-stats {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 10px; margin-top: 20px;
+}
+.home-stat {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-sm);
+  padding: 12px 10px;
+  text-align: center;
+}
+.home-stat-val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px; color: var(--txt);
+  line-height: 1;
+}
+.home-stat-lbl { font-size: 10px; color: var(--txt3); margin-top: 3px; text-transform: uppercase; letter-spacing: .06em; }
+
+.next-visit-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 14px;
+}
+.next-visit-icon {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(200,184,154,.1);
+  border: 1px solid rgba(200,184,154,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.next-visit-lbl { font-size: 11px; color: var(--txt3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+.next-visit-val { font-size: 16px; color: var(--txt); font-weight: 500; }
+.next-visit-sub { font-size: 12px; color: var(--txt3); margin-top: 2px; }
+
+/* ── PROTOCOL TAB ── */
+.ex-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 14px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.ex-card:active { background: var(--bg3); border-color: var(--line2); }
+.ex-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--bg4); border: 1px solid var(--line2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--txt3); flex-shrink: 0;
+}
+.ex-info { flex: 1; min-width: 0; }
+.ex-name { font-size: 15px; color: var(--txt); font-weight: 500; margin-bottom: 2px; }
+.ex-meta { font-size: 12px; color: var(--txt3); }
+.ex-dur {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px; color: var(--accent);
+  flex-shrink: 0;
+}
+.protocol-total {
+  text-align: center; padding: 14px;
+  font-size: 13px; color: var(--txt3);
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+}
+.protocol-total span { color: var(--txt); font-weight: 500; }
+
+/* ── HISTORY TAB ── */
+.session-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.session-row:last-child { border-bottom: none; }
+.session-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent2); flex-shrink: 0;
+}
+.session-date { font-size: 13px; color: var(--txt2); min-width: 64px; }
+.session-info { flex: 1; }
+.session-steps { font-size: 14px; color: var(--txt); }
+.session-dur { font-size: 12px; color: var(--txt3); margin-top: 1px; }
+.session-check {
+  font-size: 12px; color: var(--accent2);
+}
+
+/* ── PROGRESS TAB ── */
+.streak-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px; margin: 4px 0 12px;
+}
+.s-cell {
+  aspect-ratio: 1;
+  border-radius: 5px;
+  background: var(--bg4);
+}
+.s-cell.done { background: var(--accent2); }
+.s-cell.today {
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(200,184,154,.25);
+}
+.s-cell.future { background: transparent; border: 1px solid var(--line); opacity: .3; }
+
+.day-label {
+  font-size: 10px; color: var(--txt4);
+  text-align: center; text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.comp-row {
+  display: flex; gap: 10px; justify-content: space-around;
+  padding: 8px 0;
+}
+.comp-item { text-align: center; }
+.comp-ring-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.comp-ring-txt { position: absolute; text-align: center; }
+.comp-pct { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--txt); line-height: 1; }
+.comp-days { font-size: 10px; color: var(--txt3); margin-top: 5px; }
+.comp-count { font-size: 11px; color: var(--txt3); }
+
+.streak-number {
+  font-family: 'DM Serif Display', serif;
+  font-size: 56px; color: var(--accent2);
+  line-height: 1; text-align: center;
+}
+.streak-label { font-size: 13px; color: var(--txt3); text-align: center; margin-top: 4px; }
+
+/* ── LOADING ── */
+.loading-spinner {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 200px; gap: 14px; color: var(--txt3);
+  font-size: 14px;
+}
+.spinner {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--bg4);
+  border-top-color: var(--accent2);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 20px; gap: 10px;
+  color: var(--txt3); text-align: center;
+}
+.empty-icon { font-size: 32px; opacity: .3; }
+.empty-title { font-size: 15px; color: var(--txt2); }
+.empty-sub { font-size: 13px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: calc(70px + var(--safe-bottom));
+  left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--bg3); border: 1px solid var(--line2);
+  border-radius: 100px; padding: 10px 20px;
+  font-size: 13px; color: var(--txt);
+  opacity: 0; transition: opacity .2s, transform .2s;
+  z-index: 200; white-space: nowrap;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── INSTALL BANNER ── */
+.install-banner {
+  margin: 0 0 14px;
+  background: rgba(200,184,154,.08);
+  border: 1px solid rgba(200,184,154,.2);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.install-banner-icon { font-size: 22px; flex-shrink: 0; }
+.install-banner-body { flex: 1; }
+.install-banner-title { font-size: 14px; font-weight: 500; color: var(--txt); }
+.install-banner-sub { font-size: 12px; color: var(--txt3); margin-top: 2px; }
+.install-banner-btn {
+  background: var(--accent); color: var(--bg);
+  border: none; border-radius: 8px;
+  padding: 8px 14px; font-size: 12px; font-weight: 500;
+  cursor: pointer; flex-shrink: 0;
+  font-family: 'DM Sans', sans-serif;
+}
+.install-banner-x {
+  color: var(--txt4); cursor: pointer; font-size: 18px;
+  flex-shrink: 0; padding: 2px;
+}
+
+/* ── LOGOUT BTN ── */
+.logout-btn {
+  background: transparent;
+  border: 1px solid var(--line2);
+  border-radius: var(--r-sm);
+  color: var(--txt3); font-size: 12px;
+  padding: 5px 12px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: color .15s, border-color .15s;
+}
+.logout-btn:active { color: var(--txt); border-color: var(--line3); }
+
+/* ── HOME PRACTICE PLAYER ── */
+#screen-practice {
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  z-index: 50;
+}
+.practice-hd {
+  padding: calc(var(--safe-top) + 14px) 20px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.practice-back {
+  font-size: 14px; color: var(--txt2); cursor: pointer;
+  padding: 6px 0; background: none; border: none;
+  font-family: 'DM Sans', sans-serif;
+}
+.practice-title { font-size: 14px; font-weight: 500; color: var(--txt); }
+.practice-step-ct { font-size: 13px; color: var(--txt3); }
+
+.practice-body {
+  flex: 1; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 30px 24px;
+  gap: 24px;
+  padding-bottom: calc(var(--safe-bottom) + 100px);
+}
+
+/* Ring timer */
+.prac-ring-wrap {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.prac-ring-svg { transform: rotate(-90deg); }
+.prac-ring-track { fill: none; stroke: var(--bg4); }
+.prac-ring-prog { fill: none; stroke-linecap: round; transition: stroke-dashoffset .9s linear, stroke .4s; }
+.prac-ring-center {
+  position: absolute; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+.prac-ring-time {
+  font-family: 'DM Serif Display', serif;
+  font-size: 52px; color: var(--txt); line-height: 1;
+}
+.prac-ring-unit { font-size: 14px; color: var(--txt3); margin-top: 4px; }
+
+.prac-ex-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px; color: var(--txt);
+  text-align: center; line-height: 1.2;
+}
+.prac-ex-mod {
+  font-size: 14px; color: var(--accent); text-align: center;
+}
+.prac-cues {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center;
+}
+.prac-cue {
+  background: var(--bg3); border: 1px solid var(--line2);
+  border-radius: 100px; padding: 5px 14px;
+  font-size: 13px; color: var(--txt2);
+}
+
+.prac-step-pills {
+  display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+}
+.prac-pill {
+  width: 28px; height: 6px; border-radius: 3px;
+  background: var(--bg4); transition: background .3s;
+}
+.prac-pill.done { background: var(--accent2); }
+.prac-pill.active { background: var(--accent); }
+
+/* Bottom controls */
+.practice-controls {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 16px 24px calc(var(--safe-bottom) + 16px);
+  background: linear-gradient(to top, var(--bg) 80%, transparent);
+  display: flex; flex-direction: column; gap: 10px;
+  z-index: 10;
+}
+.prac-btn-primary {
+  width: 100%; padding: 18px;
+  background: var(--accent2); color: var(--bg);
+  border: none; border-radius: var(--r);
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px; cursor: pointer;
+  transition: opacity .15s, transform .1s;
+  -webkit-user-select: none;
+}
+.prac-btn-primary:active { opacity: .85; transform: scale(.98); }
+.prac-btn-primary:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+.prac-btn-secondary {
+  width: 100%; padding: 12px;
+  background: transparent; color: var(--txt3);
+  border: 1px solid var(--line2); border-radius: var(--r);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px; cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.prac-btn-secondary:active { color: var(--txt); border-color: var(--line3); }
+.prac-timer-label {
+  font-size: 12px; color: var(--txt4);
+  text-align: center; letter-spacing: .04em;
+}
+
+/* Done screen */
+.prac-done {
+  display: flex; flex-direction: column;
+  align-items: center; text-align: center;
+  gap: 16px; padding: 20px 0;
+}
+.prac-done-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(143,175,148,.12);
+  border: 2px solid rgba(143,175,148,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+}
+.prac-done-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px; color: var(--txt);
+}
+.prac-done-sub { font-size: 15px; color: var(--txt2); line-height: 1.6; }
+.prac-done-stats {
+  display: flex; gap: 24px;
+  background: var(--bg2); border: 1px solid var(--line);
+  border-radius: var(--r-lg); padding: 18px 24px;
+  width: 100%;
+}
+.prac-done-stat { flex: 1; text-align: center; }
+.prac-done-stat-val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px; color: var(--accent2);
+}
+.prac-done-stat-lbl { font-size: 11px; color: var(--txt3); margin-top: 2px; text-transform: uppercase; letter-spacing: .06em; }
+
+/* ── SECTION HEADER ── */
+.section-hd {
+  font-size: 11px; font-weight: 500; color: var(--txt3);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin: 20px 0 10px;
+}
+.section-hd:first-child { margin-top: 0; }
+
+/* ── MESSAGES TAB ── */
+.msg-unread-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent); position: absolute;
+  top: 6px; right: calc(50% - 14px);
+  display: none;
+}
+.msg-unread-dot.show { display: block; }
+
+/* ── MESSAGES SCREEN (full-screen overlay) ── */
+#screen-messages {
+  z-index: 60;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+}
+.msg-hd {
+  padding: calc(var(--safe-top) + 14px) 20px 14px;
+  display: flex; align-items: center; gap: 14px;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.msg-hd-back {
+  font-size: 14px; color: var(--txt2); cursor: pointer;
+  padding: 6px 0; background: none; border: none;
+  font-family: 'DM Sans', sans-serif;
+}
+.msg-hd-info { flex: 1; }
+.msg-hd-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px; color: var(--txt);
+}
+.msg-hd-status { font-size: 12px; color: var(--accent2); margin-top: 1px; }
+.msg-body {
+  flex: 1; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 10px;
+  padding-bottom: 20px;
+}
+.msg-intro {
+  text-align: center; padding: 24px 0 8px;
+}
+.msg-intro-pill {
+  font-size: 11px; color: var(--txt3);
+  background: var(--bg3); border: 1px solid var(--line);
+  border-radius: 100px; padding: 4px 14px;
+  display: inline-block; line-height: 1.6;
+}
+.msg-bubble-row { display: flex; }
+.msg-bubble-row.from-doctor { justify-content: flex-start; }
+.msg-bubble-row.from-patient { justify-content: flex-end; }
+.msg-bubble {
+  max-width: 78%; padding: 10px 14px;
+  border-radius: 18px; font-size: 15px;
+  line-height: 1.5; word-break: break-word;
+}
+.msg-bubble.doctor {
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  color: var(--txt);
+  border-radius: 18px 18px 18px 4px;
+}
+.msg-bubble.ai {
+  background: rgba(164,160,204,.1);
+  border: 1px solid rgba(164,160,204,.2);
+  color: var(--txt);
+  border-radius: 18px 18px 18px 4px;
+}
+.msg-bubble.patient {
+  background: var(--accent2);
+  color: var(--bg);
+  border-radius: 18px 18px 4px 18px;
+}
+.msg-time {
+  font-size: 11px; margin-top: 4px; padding: 0 4px;
+  color: var(--txt4);
+}
+.msg-bubble-row.from-patient .msg-time { text-align: right; }
+
+/* Slot buttons inside messages */
+.msg-slots {
+  margin-top: 10px;
+  background: rgba(143,175,148,.07);
+  border: 1px solid rgba(143,175,148,.2);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+}
+.msg-slots-lbl {
+  font-size: 10px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--accent2);
+  margin-bottom: 8px;
+}
+.msg-slot-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 14px; padding: 6px 14px;
+  background: rgba(143,175,148,.12);
+  color: var(--accent2);
+  border: 1px solid rgba(143,175,148,.3);
+  border-radius: 100px; cursor: pointer;
+  margin: 3px 4px 3px 0;
+  font-family: 'DM Sans', sans-serif;
+  transition: background .12s;
+  -webkit-user-select: none;
+}
+.msg-slot-btn:active { background: rgba(143,175,148,.3); }
+.msg-slot-btn.booked {
+  background: var(--accent2); color: var(--bg);
+  cursor: default; pointer-events: none;
+}
+
+/* Compose bar */
+.msg-compose {
+  padding: 12px 16px calc(var(--safe-bottom) + 12px);
+  border-top: 1px solid var(--line);
+  display: flex; gap: 10px; align-items: flex-end;
+  flex-shrink: 0;
+  background: var(--bg);
+}
+.msg-compose-input {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  border-radius: 22px;
+  color: var(--txt);
+  padding: 10px 16px;
+  font-size: 15px;
+  font-family: 'DM Sans', sans-serif;
+  resize: none; outline: none;
+  line-height: 1.5;
+  max-height: 120px;
+  -webkit-appearance: none;
+}
+.msg-compose-input::placeholder { color: var(--txt4); }
+.msg-compose-send {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--accent2); border: none; color: var(--bg);
+  font-size: 18px; cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity .12s;
+  -webkit-user-select: none;
+}
+.msg-compose-send:active { opacity: .8; }
+@keyframes aiDot{0%,80%,100%{transform:scale(.6);opacity:.3;}40%{transform:scale(1);opacity:1;}}
+</style>
+</head>
+<body>
+
+<!-- ── PIN SCREEN ── -->
+<div class="screen active" id="screen-pin">
+  <div class="pin-logo">
+    <div class="pin-logo-dot"></div>
+    <div class="pin-logo-name">Spinal Engine</div>
+  </div>
+  <div class="pin-headline">
+    <h1>Good to see you.</h1>
+    <p>Enter your 4-digit PIN</p>
+  </div>
+  <div class="pin-display" id="pin-display">
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+  </div>
+  <div class="numpad">
+    <div class="np-key" onclick="kp('1')"><div class="np-num">1</div><div class="np-alpha"></div></div>
+    <div class="np-key" onclick="kp('2')"><div class="np-num">2</div><div class="np-alpha">ABC</div></div>
+    <div class="np-key" onclick="kp('3')"><div class="np-num">3</div><div class="np-alpha">DEF</div></div>
+    <div class="np-key" onclick="kp('4')"><div class="np-num">4</div><div class="np-alpha">GHI</div></div>
+    <div class="np-key" onclick="kp('5')"><div class="np-num">5</div><div class="np-alpha">JKL</div></div>
+    <div class="np-key" onclick="kp('6')"><div class="np-num">6</div><div class="np-alpha">MNO</div></div>
+    <div class="np-key" onclick="kp('7')"><div class="np-num">7</div><div class="np-alpha">PQRS</div></div>
+    <div class="np-key" onclick="kp('8')"><div class="np-num">8</div><div class="np-alpha">TUV</div></div>
+    <div class="np-key" onclick="kp('9')"><div class="np-num">9</div><div class="np-alpha">WXYZ</div></div>
+    <div class="np-key del" onclick="kp('del')"><div class="np-num" style="font-size:20px;">⌫</div></div>
+    <div class="np-key" onclick="kp('0')"><div class="np-num">0</div></div>
+    <div class="np-key" onclick="kp('ok')" style="background:rgba(143,175,148,.12);border-color:rgba(143,175,148,.25);">
+      <div class="np-num" style="font-size:20px;color:var(--accent2);">→</div>
+    </div>
+  </div>
+  <div class="pin-error-msg" id="pin-error"></div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div class="screen" id="screen-app">
+  <div class="app-topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-dot"></div>
+      <div class="topbar-logo-name">Spinal Engine</div>
+    </div>
+    <div class="topbar-patient" id="topbar-patient">
+      <div class="topbar-av" id="topbar-av">—</div>
+      <button class="logout-btn" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="app-content" id="app-content">
+    <!-- Panels injected here -->
+    <div class="tab-panel active" id="panel-home"></div>
+    <div class="tab-panel" id="panel-protocol"></div>
+    <div class="tab-panel" id="panel-history"></div>
+    <div class="tab-panel" id="panel-progress"></div>
+    <div class="tab-panel" id="panel-messages"></div>
+  </div>
+
+  <nav class="tab-bar">
+    <div class="tab-item active" id="tab-home" onclick="switchTab('home')">
+      <div class="tab-icon">⌂</div>
+      <div class="tab-label">Home</div>
+    </div>
+    <div class="tab-item" id="tab-protocol" onclick="switchTab('protocol')">
+      <div class="tab-icon">◫</div>
+      <div class="tab-label">Protocol</div>
+    </div>
+    <div class="tab-item" id="tab-history" onclick="switchTab('history')">
+      <div class="tab-icon">◷</div>
+      <div class="tab-label">History</div>
+    </div>
+    <div class="tab-item" id="tab-progress" onclick="switchTab('progress')">
+      <div class="tab-icon">◎</div>
+      <div class="tab-label">Progress</div>
+    </div>
+    <div class="tab-item" id="tab-messages" onclick="openMessages()" style="position:relative;">
+      <div class="tab-icon">◉</div>
+      <div class="tab-label">Messages</div>
+      <div class="msg-unread-dot" id="msg-unread-dot"></div>
+    </div>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── HOME PRACTICE PLAYER SCREEN ── -->
+<div class="screen" id="screen-practice">
+  <div class="practice-hd">
+    <button class="practice-back" onclick="exitPractice()">← Exit</button>
+    <div class="practice-title" id="prac-title">Home Practice</div>
+    <div class="practice-step-ct" id="prac-step-ct"></div>
+  </div>
+  <div class="practice-body" id="prac-body"></div>
+  <div class="practice-controls" id="prac-controls"></div>
+</div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────
+const SB_URL = 'https://ddakwppiqacwyartaebe.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkYWt3cHBpcWFjd3lhcnRhZWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ3NDg3NTUsImV4cCI6MjA3MDMyNDc1NX0.88SZds_M88wgEgnFT81ASepy2bQn3fWBD6WdKaCEA98';
+
+// ── SUPABASE FETCH ──────────────────────────────────────────────
+async function sbFetch(path, opts={}){
+  const method = opts.method||'GET';
+  const res = await fetch(SB_URL+'/rest/v1/'+path, {
+    headers:{
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer '+SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': method==='GET'?'return=representation':'return=minimal',
+      ...opts.headers
+    },
+    method,
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if(!res.ok) throw new Error('DB '+res.status);
+  const txt = await res.text();
+  return txt ? JSON.parse(txt) : null;
+}
+
+// ── STATE ───────────────────────────────────────────────────────
+let patient = null;
+let sessions = [];
+let proto = [];
+let pinInput = '';
+const STORAGE_KEY = 'se_patient_id';
+
+// ── PIN ENTRY ───────────────────────────────────────────────────
+function kp(val){
+  const errEl = document.getElementById('pin-error');
+  errEl.textContent = '';
+  if(val==='del'){ pinInput=pinInput.slice(0,-1); }
+  else if(val==='ok'){ if(pinInput.length===4) submitPin(); return; }
+  else { if(pinInput.length>=4) return; pinInput+=val; if(pinInput.length===4) setTimeout(submitPin,180); }
+  updateDots();
+}
+function updateDots(mode=''){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('pd'+i);
+    d.classList.remove('filled','error');
+    if(mode==='error') d.classList.add('error');
+    else if(i<pinInput.length) d.classList.add('filled');
+  }
+}
+async function submitPin(){
+  try{
+    const rows = await sbFetch('patients?select=*,protocol_steps(*)&pin=eq.'+pinInput+'&active=eq.true');
+    if(!rows||!rows.length){ pinError(); return; }
+    const p = rows[0];
+    patient = {
+      ...p,
+      proto: (p.protocol_steps||[]).sort((a,b)=>a.sort_order-b.sort_order)
+    };
+    proto = patient.proto;
+    // Persist session
+    try{ localStorage.setItem(STORAGE_KEY, patient.id); }catch(e){}
+    await loadApp();
+  }catch(e){ pinError('Connection error — check your internet'); }
+}
+function pinError(msg='PIN not found'){
+  document.getElementById('pin-error').textContent = msg;
+  const disp = document.getElementById('pin-display');
+  updateDots('error');
+  disp.classList.add('shake');
+  setTimeout(()=>{ disp.classList.remove('shake'); pinInput=''; updateDots(); }, 600);
+}
+
+// ── SESSION RESTORE ──────────────────────────────────────────────
+async function tryRestoreSession(){
+  try{
+    const id = localStorage.getItem(STORAGE_KEY);
+    if(!id) return false;
+    const rows = await sbFetch('patients?select=*,protocol_steps(*)&id=eq.'+id+'&active=eq.true');
+    if(!rows||!rows.length){ localStorage.removeItem(STORAGE_KEY); return false; }
+    const p = rows[0];
+    patient = { ...p, proto: (p.protocol_steps||[]).sort((a,b)=>a.sort_order-b.sort_order) };
+    proto = patient.proto;
+    await loadApp();
+    return true;
+  }catch(e){ return false; }
+}
+
+// ── LOAD APP ─────────────────────────────────────────────────────
+async function loadApp(){
+  // Switch screens immediately — show loading state
+  document.getElementById('screen-pin').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  pinInput=''; updateDots();
+
+  // Show loading in home panel
+  document.getElementById('topbar-av').textContent = patient.initials||'?';
+  document.getElementById('panel-home').innerHTML =
+    '<div class="loading-spinner"><div class="spinner"></div><span>Loading your profile…</span></div>';
+
+  // Fetch sessions
+  try{
+    sessions = await sbFetch(
+      'session_logs?patient_id=eq.'+patient.id+'&order=completed_at.desc&limit=200'
+    );
+  }catch(e){ sessions=[]; }
+
+  // Render all panels
+  renderHome();
+  renderProtocol();
+  renderHistory();
+  renderProgress();
+
+  // Check for unread messages (updates the tab bar dot)
+  if (typeof pmCheckUnread === 'function') pmCheckUnread();
+}
+
+function logout(){
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  patient=null; sessions=[]; proto=[];
+  document.getElementById('screen-app').classList.remove('active');
+  document.getElementById('screen-pin').classList.add('active');
+  document.getElementById('pin-error').textContent='';
+  pinInput=''; updateDots();
+}
+
+// ── TAB SWITCHING ────────────────────────────────────────────────
+let curTab = 'home';
+function switchTab(tab){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('app-content').scrollTop=0;
+  curTab=tab;
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function fmt(iso){ const d=new Date(iso); return d.toLocaleDateString([],{month:'short',day:'numeric'}); }
+function fmtFull(iso){ const d=new Date(iso); return d.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'}); }
+function fmtTime(s){ const m=Math.floor(s/60),sec=s%60; return m>0?m+'m'+(sec?' '+sec+'s':''):sec+'s'; }
+function calcStreak(){
+  const days=new Set(sessions.map(s=>s.completed_at.slice(0,10)));
+  let streak=0, d=new Date();
+  while(days.has(d.toISOString().slice(0,10))){ streak++; d.setDate(d.getDate()-1); }
+  if(streak===0){ d=new Date(); d.setDate(d.getDate()-1); while(days.has(d.toISOString().slice(0,10))){ streak++; d.setDate(d.getDate()-1); } }
+  return streak;
+}
+function complianceData(days){
+  const since=new Date(); since.setDate(since.getDate()-days);
+  const count=sessions.filter(s=>new Date(s.completed_at)>=since).length;
+  const target=Math.round(days/7*3);
+  return {count,target,pct:Math.min(100,Math.round(count/Math.max(1,target)*100))};
+}
+function compRingSVG(pct,color,size=60){
+  const r=size/2-5,circ=2*Math.PI*r,offset=circ*(1-pct/100);
+  return `<svg width="${size}" height="${size}" style="transform:rotate(-90deg)">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--bg4)" stroke-width="5"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="5"
+      stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// ── INSTALL PROMPT ────────────────────────────────────────────────
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; });
+function showInstallBanner(){
+  // Only show on mobile and if not already installed
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if(isStandalone) return '';
+  const dismissed = localStorage.getItem('se_install_dismissed');
+  if(dismissed) return '';
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if(isIOS){
+    return `<div class="install-banner" id="install-banner">
+      <div class="install-banner-icon">⬆</div>
+      <div class="install-banner-body">
+        <div class="install-banner-title">Add to Home Screen</div>
+        <div class="install-banner-sub">Tap Share then "Add to Home Screen" for the full app experience</div>
+      </div>
+      <div class="install-banner-x" onclick="dismissInstall()">×</div>
+    </div>`;
+  }
+  if(deferredPrompt){
+    return `<div class="install-banner" id="install-banner">
+      <div class="install-banner-icon">⬆</div>
+      <div class="install-banner-body">
+        <div class="install-banner-title">Install app</div>
+        <div class="install-banner-sub">Add Spinal Engine to your home screen</div>
+      </div>
+      <button class="install-banner-btn" onclick="triggerInstall()">Install</button>
+      <div class="install-banner-x" onclick="dismissInstall()">×</div>
+    </div>`;
+  }
+  return '';
+}
+function dismissInstall(){ localStorage.setItem('se_install_dismissed','1'); const b=document.getElementById('install-banner'); if(b)b.remove(); }
+async function triggerInstall(){ if(!deferredPrompt) return; deferredPrompt.prompt(); deferredPrompt=null; dismissInstall(); }
+
+// ── HOME TAB ──────────────────────────────────────────────────────
+function renderHome(){
+  const streak = calcStreak();
+  const totalVisits = sessions.length;
+  const totalMins = sessions.reduce((a,s)=>a+Math.round(s.duration_sec/60),0);
+  const h = new Date().getHours();
+  const tod = h<12?'morning':h<17?'afternoon':'evening';
+  const firstName = (patient.name||'').split(' ')[0];
+
+  const protoDur = proto.reduce((a,s)=>a+s.duration_sec,0);
+  const protoMins = Math.round(protoDur/60);
+
+  document.getElementById('panel-home').innerHTML = `
+    ${showInstallBanner()}
+    <div class="home-hero">
+      <div class="home-greeting">Good ${tod}</div>
+      <div class="home-name">${firstName}</div>
+      <div class="home-plan">${patient.plan} Member · ${patient.area||'Spinal activation'}</div>
+      <div class="home-stats">
+        <div class="home-stat">
+          <div class="home-stat-val" style="color:var(--accent2);">${streak}</div>
+          <div class="home-stat-lbl">Day streak</div>
+        </div>
+        <div class="home-stat">
+          <div class="home-stat-val">${totalVisits}</div>
+          <div class="home-stat-lbl">Visits</div>
+        </div>
+        <div class="home-stat">
+          <div class="home-stat-val">${totalMins}</div>
+          <div class="home-stat-lbl">Total min</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="next-visit-card" onclick="proto.length?startHomePractice():null" style="cursor:${proto.length?'pointer':'default'};">
+      <div class="next-visit-icon">▶</div>
+      <div style="flex:1;">
+        <div class="next-visit-lbl">${proto.length?'Practice at home':'Your protocol'}</div>
+        <div class="next-visit-val">${proto.length} exercises · ${protoMins} min</div>
+        <div class="next-visit-sub">${proto.length?'Tap to run your protocol at home':'Your doctor will assign exercises at your next visit'}</div>
+      </div>
+      ${proto.length?'<div style="color:var(--accent2);font-size:20px;">→</div>':''}
+    </div>
+
+    <div class="section-hd">Today's protocol preview</div>
+    ${proto.length===0
+      ? `<div class="empty-state"><div class="empty-icon">◫</div><div class="empty-title">No protocol assigned yet</div><div class="empty-sub">Your doctor will set this up at your next visit</div></div>`
+      : proto.slice(0,3).map((s,i)=>`
+        <div class="ex-card" onclick="switchTab('protocol')">
+          <div class="ex-num">${i+1}</div>
+          <div class="ex-info">
+            <div class="ex-name">${s.exercise_name||s.exercise_id}</div>
+            <div class="ex-meta">${s.mod_name||'Standard'}</div>
+          </div>
+          <div class="ex-dur">${fmtTime(s.duration_sec)}</div>
+        </div>`).join('')
+    }
+    ${proto.length>3?`<div style="text-align:center;padding:10px 0;"><span style="font-size:13px;color:var(--txt3);cursor:pointer;" onclick="switchTab('protocol')">View all ${proto.length} exercises →</span></div>`:''}
+
+    ${sessions.length>0?`
+    <div class="section-hd">Last visit</div>
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:15px;color:var(--txt);font-weight:500;">${fmtFull(sessions[0].completed_at)}</div>
+            <div style="font-size:13px;color:var(--txt3);margin-top:3px;">${sessions[0].steps} exercises · ${Math.round(sessions[0].duration_sec/60)} min</div>
+          </div>
+          <div style="font-size:24px;color:var(--accent2);">✓</div>
+        </div>
+      </div>
+    </div>`:''}
+  `;
+}
+
+// ── PROTOCOL TAB ──────────────────────────────────────────────────
+function renderProtocol(){
+  const totalDur = proto.reduce((a,s)=>a+s.duration_sec,0);
+  document.getElementById('panel-protocol').innerHTML = proto.length===0
+    ? `<div class="empty-state" style="margin-top:40px;">
+        <div class="empty-icon">◫</div>
+        <div class="empty-title">No protocol assigned yet</div>
+        <div class="empty-sub">Your doctor will set this up at your next visit</div>
+      </div>`
+    : `<div class="section-hd">Your activation protocol · ${proto.length} exercises</div>
+       ${proto.map((s,i)=>`
+        <div class="ex-card">
+          <div class="ex-num" style="background:var(--bg3);border-color:rgba(143,175,148,.2);color:var(--accent2);">${i+1}</div>
+          <div class="ex-info">
+            <div class="ex-name">${s.exercise_name||s.exercise_id}</div>
+            <div class="ex-meta">${s.mod_name||'Standard'}</div>
+          </div>
+          <div class="ex-dur">${fmtTime(s.duration_sec)}</div>
+        </div>`).join('')}
+       <div class="protocol-total">Total: <span>${fmtTime(totalDur)}</span></div>
+       <div style="padding:0 0 16px;">
+         <button onclick="startHomePractice()" style="
+           width:100%;padding:16px;
+           background:rgba(143,175,148,.1);
+           border:1px solid rgba(143,175,148,.25);
+           border-radius:var(--r-lg);
+           color:var(--accent2);font-size:16px;font-weight:500;
+           font-family:'DM Sans',sans-serif;cursor:pointer;
+           display:flex;align-items:center;justify-content:center;gap:10px;
+           transition:background .15s;">
+           <span style="font-size:20px;">▶</span> Start home practice
+         </button>
+         <div style="font-size:12px;color:var(--txt3);text-align:center;margin-top:8px;">Logged separately from in-office sessions</div>
+       </div>`;
+}
+
+// ── HISTORY TAB ──────────────────────────────────────────────────
+function renderHistory(){
+  if(sessions.length===0){
+    document.getElementById('panel-history').innerHTML=`
+      <div class="empty-state" style="margin-top:40px;">
+        <div class="empty-icon">◷</div>
+        <div class="empty-title">No sessions yet</div>
+        <div class="empty-sub">Your visit history will appear here after your first activation</div>
+      </div>`;
+    return;
+  }
+  const rows = sessions.map(s=>`
+    <div class="session-row">
+      <div class="session-dot"></div>
+      <div class="session-date">${fmt(s.completed_at)}</div>
+      <div class="session-info">
+        <div class="session-steps">${s.steps} exercises</div>
+        <div class="session-dur">${Math.round(s.duration_sec/60)||1} min</div>
+      </div>
+      <div class="session-check">✓</div>
+    </div>`).join('');
+
+  document.getElementById('panel-history').innerHTML=`
+    <div class="section-hd">${sessions.length} total sessions</div>
+    <div class="card"><div class="card-body" style="padding:8px 18px;">${rows}</div></div>`;
+}
+
+// ── PROGRESS TAB ──────────────────────────────────────────────────
+function renderProgress(){
+  const streak = calcStreak();
+  const c30=complianceData(30), c60=complianceData(60), c90=complianceData(90);
+
+  // 28-day grid
+  const sessionDays=new Set(sessions.map(s=>s.completed_at.slice(0,10)));
+  const today=new Date().toISOString().slice(0,10);
+  const grid=[];
+  for(let i=27;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); grid.push(d.toISOString().slice(0,10)); }
+  const dayNames=['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const firstDay=new Date(grid[0]).getDay();
+
+  document.getElementById('panel-progress').innerHTML=`
+    <div class="section-hd">Current streak</div>
+    <div class="card">
+      <div class="card-body" style="text-align:center;padding:24px 18px;">
+        <div class="streak-number">${streak}</div>
+        <div class="streak-label">${streak===1?'day':'days'} in a row</div>
+        <div style="font-size:12px;color:var(--txt4);margin-top:8px;">Keep showing up — consistency is the adjustment holding</div>
+      </div>
+    </div>
+
+    <div class="section-hd">28-day activity</div>
+    <div class="card">
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:5px;">
+          ${dayNames.map(d=>`<div class="day-label">${d}</div>`).join('')}
+        </div>
+        <div class="streak-grid">
+          ${Array(firstDay).fill('<div class="s-cell future"></div>').join('')}
+          ${grid.map(d=>`<div class="s-cell${d===today?' today':sessionDays.has(d)?' done':''}"></div>`).join('')}
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:8px;font-size:11px;color:var(--txt3);">
+          <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:2px;background:var(--accent2);"></div>Session</div>
+          <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:2px;background:var(--accent);"></div>Today</div>
+          <div style="display:flex;align-items:center;gap:5px;"><div style="width:10px;height:10px;border-radius:2px;background:var(--bg4);"></div>Missed</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-hd">Compliance · target: 3 visits/week</div>
+    <div class="card">
+      <div class="card-body">
+        <div class="comp-row">
+          <div class="comp-item">
+            <div class="comp-ring-wrap">
+              ${compRingSVG(c30.pct,'var(--accent2)',64)}
+              <div class="comp-ring-txt"><div class="comp-pct">${c30.pct}%</div></div>
+            </div>
+            <div class="comp-days">30 days</div>
+            <div class="comp-count">${c30.count} of ${c30.target} visits</div>
+          </div>
+          <div class="comp-item">
+            <div class="comp-ring-wrap">
+              ${compRingSVG(c60.pct,'var(--accent3)',64)}
+              <div class="comp-ring-txt"><div class="comp-pct">${c60.pct}%</div></div>
+            </div>
+            <div class="comp-days">60 days</div>
+            <div class="comp-count">${c60.count} of ${c60.target} visits</div>
+          </div>
+          <div class="comp-item">
+            <div class="comp-ring-wrap">
+              ${compRingSVG(c90.pct,'var(--accent)',64)}
+              <div class="comp-ring-txt"><div class="comp-pct">${c90.pct}%</div></div>
+            </div>
+            <div class="comp-days">90 days</div>
+            <div class="comp-count">${c90.count} of ${c90.target} visits</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:10px;"></div>`;
+}
+
+// ── TOAST ────────────────────────────────────────────────────────
+let toastT=null;
+function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2500); }
+
+// ── KEYBOARD (desktop testing) ────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('screen-pin').classList.contains('active')){
+    if(e.key>='0'&&e.key<='9') kp(e.key);
+    else if(e.key==='Backspace') kp('del');
+    else if(e.key==='Enter') kp('ok');
+  }
+});
+
+// ── SERVICE WORKER ────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  const swCode = `
+const CACHE = 'se-pwa-v1';
+const URLS = [self.location.pathname];
+self.addEventListener('install', e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(URLS))); self.skipWaiting(); });
+self.addEventListener('activate', e=>{ e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))); self.clients.claim(); });
+self.addEventListener('fetch', e=>{
+  if(e.request.url.includes('supabase.co')) return; // never cache API calls
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
+});`;
+  const swBlob = new Blob([swCode], {type:'text/javascript'});
+  const swUrl = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swUrl).catch(()=>{});
+}
+
+// ══════════════════════════════════════════════════════════════════
+// HOME PRACTICE MODE
+// ══════════════════════════════════════════════════════════════════
+let pracStep = 0;
+let pracTimer = null;
+let pracTimeLeft = 0;
+let pracPaused = false;
+let pracStartTime = null;
+let pracElapsed = 0; // total elapsed seconds across all steps
+
+const CIRC_PRAC = 2 * Math.PI * 110; // ring circumference (r=110)
+
+function startHomePractice(){
+  if(!proto.length){ showToast('No protocol assigned yet'); return; }
+  pracStep = 0;
+  pracPaused = false;
+  pracElapsed = 0;
+  pracStartTime = Date.now();
+  document.getElementById('prac-title').textContent = 'Home Practice';
+  document.getElementById('screen-practice').classList.add('active');
+  loadPracStep(0);
+}
+
+function exitPractice(){
+  clearInterval(pracTimer);
+  pracTimer = null;
+  document.getElementById('screen-practice').classList.remove('active');
+}
+
+function loadPracStep(idx){
+  clearInterval(pracTimer);
+  pracTimer = null;
+  pracStep = idx;
+  pracPaused = false;
+
+  const step = proto[idx];
+  const stepName = step.exercise_name || step.exercise_id || 'Exercise';
+  const stepMod  = step.mod_name || 'Standard';
+  const dur      = step.duration_sec;
+  pracTimeLeft   = dur;
+
+  const isLast   = idx === proto.length - 1;
+
+  // Step counter
+  document.getElementById('prac-step-ct').textContent = (idx+1)+' / '+proto.length;
+
+  // Build step pills
+  const pills = proto.map((_,i)=>
+    `<div class="prac-pill${i<idx?' done':i===idx?' active':''}"></div>`
+  ).join('');
+
+  // Default cues based on common exercise names
+  const cueMap = {
+    'dead bug':['Low back flat','Breathe out as you extend','Move slowly'],
+    'bird dog':['Neutral spine','Keep hips level','Extend fully'],
+    'plank':['Squeeze glutes','Breathe steadily','Eyes down'],
+    'glute bridge':['Drive through heels','Squeeze at top','Hold 2 seconds'],
+    'cat cow':['Full range of motion','Breathe with movement','Slow and controlled'],
+    'dead hang':['Relax shoulders','Breathe slowly','Let spine decompress'],
+  };
+  const cueKey = stepName.toLowerCase();
+  const cues = Object.keys(cueMap).find(k=>cueKey.includes(k))
+    ? cueMap[Object.keys(cueMap).find(k=>cueKey.includes(k))]
+    : [];
+
+  // Render body
+  document.getElementById('prac-body').innerHTML = `
+    <div class="prac-step-pills">${pills}</div>
+
+    <div class="prac-ring-wrap">
+      <svg class="prac-ring-svg" viewBox="0 0 260 260" width="240" height="240">
+        <circle class="prac-ring-track" cx="130" cy="130" r="110" stroke-width="10"/>
+        <circle class="prac-ring-prog" cx="130" cy="130" r="110" stroke-width="10"
+          stroke-dasharray="${CIRC_PRAC.toFixed(1)}"
+          stroke-dashoffset="0"
+          stroke="var(--accent2)"
+          id="prac-ring"/>
+      </svg>
+      <div class="prac-ring-center">
+        <div class="prac-ring-time" id="prac-time">${fmtTimePrac(dur)}</div>
+        <div class="prac-ring-unit">remaining</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="prac-ex-name">${stepName}</div>
+      <div class="prac-ex-mod">${stepMod}</div>
+    </div>
+
+    ${cues.length?`<div class="prac-cues">${cues.map(c=>`<div class="prac-cue">${c}</div>`).join('')}</div>`:''}
+  `;
+
+  // Render controls
+  renderPracControls(isLast);
+
+  // Start timer
+  updatePracRing(dur, dur);
+  startPracTimer(dur, isLast);
+}
+
+function fmtTimePrac(s){
+  const m=Math.floor(s/60), sec=s%60;
+  return m>0 ? m+':'+(String(sec).padStart(2,'0')) : String(s);
+}
+
+function updatePracRing(timeLeft, totalDur){
+  const frac = Math.max(0, timeLeft / totalDur);
+  const offset = CIRC_PRAC * (1 - frac);
+  const ring = document.getElementById('prac-ring');
+  const timeEl = document.getElementById('prac-time');
+  if(ring){
+    ring.style.strokeDashoffset = offset.toFixed(1);
+    ring.style.stroke = timeLeft<=5?'var(--danger)':timeLeft<=10?'var(--warn)':'var(--accent2)';
+  }
+  if(timeEl) timeEl.textContent = fmtTimePrac(timeLeft);
+}
+
+function startPracTimer(dur, isLast){
+  const totalDur = dur;
+  pracTimer = setInterval(()=>{
+    if(pracPaused) return;
+    pracTimeLeft--;
+    pracElapsed++;
+    updatePracRing(pracTimeLeft, totalDur);
+    if(pracTimeLeft <= 0){
+      clearInterval(pracTimer);
+      pracTimer = null;
+      if(!isLast){
+        // Auto-advance after 1s pause
+        setTimeout(()=>{ if(pracStep < proto.length-1) loadPracStep(pracStep+1); }, 1000);
+      } else {
+        // Last step done — show completion
+        setTimeout(()=>finishPractice(), 800);
+      }
+    }
+  }, 1000);
+}
+
+function renderPracControls(isLast){
+  document.getElementById('prac-controls').innerHTML = `
+    <button class="prac-btn-primary" id="prac-main-btn" onclick="advancePracStep()">
+      ${isLast ? 'Finish practice ✓' : 'Next exercise →'}
+    </button>
+    <button class="prac-btn-secondary" onclick="togglePracPause()" id="prac-pause-btn">
+      Pause
+    </button>
+    <div class="prac-timer-label" id="prac-timer-label">Timer running — you can advance early</div>
+  `;
+}
+
+function advancePracStep(){
+  clearInterval(pracTimer);
+  pracTimer = null;
+  // Add remaining time to elapsed (credit the full step)
+  pracElapsed += pracTimeLeft;
+  if(pracStep < proto.length-1){
+    loadPracStep(pracStep+1);
+  } else {
+    finishPractice();
+  }
+}
+
+function togglePracPause(){
+  pracPaused = !pracPaused;
+  const btn = document.getElementById('prac-pause-btn');
+  const lbl = document.getElementById('prac-timer-label');
+  if(btn) btn.textContent = pracPaused ? 'Resume' : 'Pause';
+  if(lbl) lbl.textContent = pracPaused ? 'Paused — tap Resume to continue' : 'Timer running — you can advance early';
+}
+
+async function finishPractice(){
+  clearInterval(pracTimer);
+  pracTimer = null;
+
+  const totalProtoDur = proto.reduce((a,s)=>a+s.duration_sec,0);
+  const actualDur = Math.round((Date.now()-pracStartTime)/1000);
+  const durationSec = Math.min(actualDur, totalProtoDur + 60); // cap at protocol + 1 min
+
+  // Show done screen immediately
+  document.getElementById('prac-step-ct').textContent = 'Complete';
+  document.getElementById('prac-body').innerHTML = `
+    <div class="prac-done">
+      <div class="prac-done-icon">✓</div>
+      <div class="prac-done-title">Great work.</div>
+      <div class="prac-done-sub">You completed your home practice session.<br>This will show in your history and your doctor's records.</div>
+      <div class="prac-done-stats">
+        <div class="prac-done-stat">
+          <div class="prac-done-stat-val">${proto.length}</div>
+          <div class="prac-done-stat-lbl">Exercises</div>
+        </div>
+        <div class="prac-done-stat">
+          <div class="prac-done-stat-val">${Math.round(durationSec/60)||1}</div>
+          <div class="prac-done-stat-lbl">Minutes</div>
+        </div>
+        <div class="prac-done-stat">
+          <div class="prac-done-stat-val" id="prac-new-streak">—</div>
+          <div class="prac-done-stat-lbl">Day streak</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('prac-controls').innerHTML = `
+    <button class="prac-btn-primary" onclick="exitPractice();switchTab('progress')">
+      View my progress →
+    </button>
+    <button class="prac-btn-secondary" onclick="exitPractice()">Back to app</button>
+  `;
+
+  // Log session to Supabase (tagged as home source)
+  try{
+    const exercises = proto.map(s=>({
+      name: s.exercise_name||s.exercise_id,
+      mod:  s.mod_name||'Standard',
+      dur:  s.duration_sec
+    }));
+    await sbFetch('session_logs', {
+      method: 'POST',
+      body: {
+        patient_id:   patient.id,
+        patient_name: patient.name,
+        plan:         patient.plan,
+        steps:        proto.length,
+        duration_sec: durationSec,
+        exercises,
+        source:       'home', // distinguishes from kiosk sessions
+      }
+    });
+    // Refresh sessions and update streak display
+    sessions = await sbFetch(
+      'session_logs?patient_id=eq.'+patient.id+'&order=completed_at.desc&limit=200'
+    );
+    const newStreak = calcStreak();
+    const el = document.getElementById('prac-new-streak');
+    if(el) el.textContent = newStreak;
+    // Silently refresh the other tabs too
+    renderHome();
+    renderHistory();
+    renderProgress();
+  }catch(e){
+    showToast('Session saved locally — will sync when online');
+    console.warn('Session log error:', e);
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+(async()=>{
+  const restored = await tryRestoreSession();
+  if(!restored){
+    document.getElementById('screen-pin').classList.add('active');
+  }
+})();
+</script>
+
+<!-- ── MESSAGES SCREEN ── -->
+<div class="screen" id="screen-messages">
+  <div class="msg-hd">
+    <button class="msg-hd-back" onclick="closeMessages()">← Back</button>
+    <div class="msg-hd-info">
+      <div class="msg-hd-name" id="pm-hd-name">Magnolia Chiropractic</div>
+      <div class="msg-hd-status" id="pm-hd-status">● Online</div>
+    </div>
+  </div>
+  <div class="msg-body" id="pm-body"></div>
+  <div class="msg-compose">
+    <textarea class="msg-compose-input" id="pm-input" rows="1"
+      placeholder="Message your doctor…"
+      oninput="pmGrow(this)"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();pmSend();}"></textarea>
+    <button class="msg-compose-send" onclick="pmSend()">↑</button>
+  </div>
+  <!-- AI typing indicator -->
+  <div id="pm-ai-typing" style="display:none;padding:6px 16px 0;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--accent2,#8faf94);">
+      <span style="display:flex;gap:3px;align-items:center;">
+        <span style="width:5px;height:5px;border-radius:50%;background:var(--accent2,#8faf94);animation:aiDot 1.2s ease-in-out infinite;display:inline-block;"></span>
+        <span style="width:5px;height:5px;border-radius:50%;background:var(--accent2,#8faf94);animation:aiDot 1.2s ease-in-out infinite .2s;display:inline-block;"></span>
+        <span style="width:5px;height:5px;border-radius:50%;background:var(--accent2,#8faf94);animation:aiDot 1.2s ease-in-out infinite .4s;display:inline-block;"></span>
+      </span>
+      <span>Spinal Engine is replying…</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// PWA MESSAGING ENGINE
+// ══════════════════════════════════════════════════════════════
+(function(){
+'use strict';
+
+var PM_SB_URL = 'https://ddakwppiqacwyartaebe.supabase.co';
+var PM_SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkYWt3cHBpcWFjd3lhcnRhZWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ3NDg3NTUsImV4cCI6MjA3MDMyNDc1NX0.88SZds_M88wgEgnFT81ASepy2bQn3fWBD6WdKaCEA98';
+
+var pmThreadId = null;
+window._pmGetThreadId = function(){ return pmThreadId; };
+window._pmLoadHistory = function(){ return pmLoadHistory(); };
+var pmRtChannel = null;
+var pmLoaded = false;
+
+// ── Supabase REST ─────────────────────────────────────────────
+async function pmSb(path, opts) {
+  opts = opts || {};
+  var r = await fetch(PM_SB_URL + '/rest/v1' + path, {
+    headers: Object.assign({
+      apikey: PM_SB_KEY,
+      Authorization: 'Bearer ' + PM_SB_KEY,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation'
+    }, opts.headers || {}),
+    method: opts.method || 'GET',
+    body: opts.body
+  });
+  if (!r.ok) throw new Error('DB ' + r.status);
+  if (r.status === 204) return null;
+  return r.json();
+}
+
+// ── Realtime ──────────────────────────────────────────────────
+function pmSubscribeRt(threadId) {
+  // Use the supabase client already loaded in pwa.html via cdn if available
+  // Otherwise fall back to polling
+  try {
+    if (typeof window.supabase === 'undefined') {
+      // Load supabase client dynamically
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+      s.onload = function() { pmSubscribeRt(threadId); };
+      document.head.appendChild(s);
+      return;
+    }
+    var client = window.supabase.createClient(PM_SB_URL, PM_SB_KEY);
+    pmRtChannel = client.channel('pwa-msgs-' + Date.now())
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public',
+        table: 'messages',
+        filter: 'thread_id=eq.' + threadId
+      }, function(payload) {
+        var msg = payload.new;
+        if (msg.sender === 'admin' || msg.sender === 'ai') {
+          pmAppendBubble(msg, true);
+          pmSb('/message_threads?id=eq.' + threadId, {
+            method: 'PATCH',
+            body: JSON.stringify({ unread_patient: false })
+          }).catch(function(){});
+        }
+      })
+      .subscribe();
+  } catch(e) {
+    console.warn('[PM Realtime]', e);
+  }
+}
+
+// ── Time helper ───────────────────────────────────────────────
+function pmFmtTime(iso) {
+  var d = new Date(iso);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// ── Get or create thread ──────────────────────────────────────
+async function pmEnsureThread() {
+  if (!patient || !patient.id) throw new Error('Not logged in');
+  var rows = await pmSb('/message_threads?patient_id=eq.' + patient.id + '&limit=1');
+  if (rows && rows.length) return rows[0].id;
+  var created = await pmSb('/message_threads', {
+    method: 'POST',
+    body: JSON.stringify({ patient_id: patient.id, unread_admin: false, unread_patient: false })
+  });
+  return created[0].id;
+}
+
+// ── Render a bubble into the chat body ───────────────────────
+function pmAppendBubble(msg, scroll) {
+  var body = document.getElementById('pm-body');
+  if (!body) return;
+
+  var fromDoc = msg.sender === 'admin' || msg.sender === 'ai';
+  var rowCls = fromDoc ? 'from-doctor' : 'from-patient';
+  var bubCls = msg.sender === 'ai' ? 'ai' : (fromDoc ? 'doctor' : 'patient');
+  var timeLabel = pmFmtTime(msg.created_at || new Date().toISOString());
+  var senderLabel = msg.sender === 'ai' ? 'Spinal Engine' : (fromDoc ? 'Dr.' : '');
+
+  // Build slot buttons if this message has booking slots
+  var slotsHtml = '';
+  if (msg.booking_slots && !msg.booked) {
+    try {
+      var slots = JSON.parse(msg.booking_slots);
+      var btns = slots.map(function(s) {
+        return '<button class="msg-slot-btn" onclick="pmBookSlot(\'' + s.time24 + '\',\'' + s.label + '\',\'' + msg.id + '\',this)">◴ ' + s.label + '</button>';
+      }).join('');
+      slotsHtml = '<div class="msg-slots"><div class="msg-slots-lbl">◴ Tap a time to confirm</div>' + btns + '</div>';
+    } catch(e) {}
+  }
+
+  var html = '<div class="msg-bubble-row ' + rowCls + '">'
+    + '<div>'
+    + '<div class="msg-bubble ' + bubCls + '">'
+    + msg.body.replace(/\n/g, '<br>') + slotsHtml
+    + '</div>'
+    + '<div class="msg-time">' + (senderLabel ? senderLabel + ' · ' : '') + timeLabel + '</div>'
+    + '</div></div>';
+
+  body.insertAdjacentHTML('beforeend', html);
+  if (scroll !== false) body.scrollTop = body.scrollHeight;
+}
+
+// ── Load full message history ─────────────────────────────────
+async function pmLoadHistory() {
+  var body = document.getElementById('pm-body');
+  if (!body || !pmThreadId) return;
+
+  body.innerHTML = '<div class="msg-intro"><div class="msg-intro-pill">Messages are private between you and your doctor</div></div>';
+
+  var msgs = await pmSb('/messages?thread_id=eq.' + pmThreadId + '&order=created_at.asc&limit=100');
+
+  if (!msgs || !msgs.length) {
+    body.innerHTML += '<div style="text-align:center;padding:32px 20px;color:var(--txt3);font-size:14px;line-height:1.7;">'
+      + 'Send a message to request an appointment,<br>ask a question, or let us know how you\'re doing.</div>';
+    return;
+  }
+
+  msgs.forEach(function(msg) { pmAppendBubble(msg, false); });
+  body.scrollTop = body.scrollHeight;
+
+  // Check for latest unbooked slot message and re-surface its buttons
+  // (already rendered inline via pmAppendBubble — no extra action needed)
+}
+
+// ── Open messages ─────────────────────────────────────────────
+window.openMessages = async function() {
+  var screen = document.getElementById('screen-messages');
+  if (!screen) return;
+
+  // Update header with doctor name
+  var nameEl = document.getElementById('pm-hd-name');
+  if (nameEl) nameEl.textContent = 'Magnolia Chiropractic of Petaluma';
+
+  screen.classList.add('active');
+
+  try {
+    pmThreadId = await pmEnsureThread();
+    await pmLoadHistory();
+
+    // Mark as read
+    await pmSb('/message_threads?id=eq.' + pmThreadId, {
+      method: 'PATCH',
+      body: JSON.stringify({ unread_patient: false })
+    }).catch(function(){});
+
+    // Clear unread dot
+    var dot = document.getElementById('msg-unread-dot');
+    if (dot) dot.classList.remove('show');
+
+    // Subscribe to realtime
+    if (pmRtChannel) { try { pmRtChannel.unsubscribe(); } catch(e) {} }
+    pmSubscribeRt(pmThreadId);
+
+    pmLoaded = true;
+
+  } catch(e) {
+    var body = document.getElementById('pm-body');
+    if (body) body.innerHTML += '<div style="text-align:center;color:var(--danger);font-size:13px;padding:20px;">Could not load messages: ' + e.message + '</div>';
+    console.error('[PM]', e);
+  }
+};
+
+window.closeMessages = function() {
+  var screen = document.getElementById('screen-messages');
+  if (screen) screen.classList.remove('active');
+  if (pmRtChannel) { try { pmRtChannel.unsubscribe(); pmRtChannel = null; } catch(e) {} }
+};
+
+// ── Send a message ────────────────────────────────────────────
+window.pmSend = async function() {
+  if (!pmThreadId || !patient) return;
+  var input = document.getElementById('pm-input');
+  var text = (input && input.value || '').trim();
+  if (!text) return;
+  input.value = ''; input.style.height = '';
+
+  // Optimistic render
+  pmAppendBubble({
+    sender: 'patient', body: text,
+    created_at: new Date().toISOString()
+  }, true);
+
+  try {
+    await pmSb('/messages', {
+      method: 'POST',
+      body: JSON.stringify({
+        thread_id: pmThreadId,
+        patient_id: patient.id,
+        sender: 'patient',
+        body: text
+      })
+    });
+    await pmSb('/message_threads?id=eq.' + pmThreadId, {
+      method: 'PATCH',
+      body: JSON.stringify({ unread_admin: true, last_message_at: new Date().toISOString() })
+    }).catch(function(){});
+  } catch(e) {
+    var body = document.getElementById('pm-body');
+    if (body) body.insertAdjacentHTML('beforeend',
+      '<div style="text-align:center;color:var(--danger);font-size:12px;padding:4px;">Failed to send — check your connection</div>');
+  }
+
+  // Show typing indicator then poll for edge function AI reply
+  var _pwTyping = document.getElementById('pm-ai-typing');
+  if (_pwTyping) _pwTyping.style.display = 'flex';
+  var _pwPoll = 0;
+  var _pwCheck = async function() {
+    _pwPoll++;
+    // Use pmLoadHistory — the correct function name in this file
+    try {
+      await pmLoadHistory();
+      var b = document.getElementById('pm-body');
+      if (b) b.scrollTop = b.scrollHeight;
+    } catch(e) { console.warn('[PWA poll]', e); }
+    if (_pwTyping) _pwTyping.style.display = 'none';
+    // Check if AI reply appeared — look for from-ai bubble
+    if (_pwPoll < 3) {
+      var body = document.getElementById('pm-body');
+      var aiReply = body && body.querySelector('.msg-row.from-doctor, .bubble.ai, .bubble.doctor');
+      if (!aiReply) {
+        if (_pwTyping) _pwTyping.style.display = 'flex';
+        setTimeout(_pwCheck, 3000);
+      }
+    }
+  };
+  setTimeout(_pwCheck, 3500);
+
+// ── Confirm a time slot ───────────────────────────────────────
+window.pmBookSlot = async function(time24, label, msgId, btn) {
+  if (!pmThreadId || !patient) return;
+
+  // Disable all slot buttons in this group
+  var card = btn.closest('.msg-slots');
+  if (card) {
+    card.querySelectorAll('.msg-slot-btn').forEach(function(b) {
+      b.disabled = true; b.classList.remove('booked');
+    });
+  }
+  btn.classList.add('booked');
+  btn.textContent = '✓ ' + label;
+
+  // Send confirmation message from patient
+  try {
+    await pmSb('/messages', {
+      method: 'POST',
+      body: JSON.stringify({
+        thread_id: pmThreadId,
+        patient_id: patient.id,
+        sender: 'patient',
+        body: '✓ ' + label + ' works for me today!'
+      })
+    });
+    // Mark original message as booked
+    await pmSb('/messages?id=eq.' + msgId, {
+      method: 'PATCH',
+      body: JSON.stringify({ booked: true })
+    }).catch(function(){});
+    // Mark thread unread for admin
+    await pmSb('/message_threads?id=eq.' + pmThreadId, {
+      method: 'PATCH',
+      body: JSON.stringify({ unread_admin: true, last_message_at: new Date().toISOString() })
+    }).catch(function(){});
+
+    // Show confirmation toast
+    showToast('Appointment request sent for ' + label + '!');
+
+    // Reload to reflect the sent confirmation
+    setTimeout(function() { pmLoadHistory(); }, 400);
+
+  } catch(e) {
+    showToast('Could not send — try again');
+  }
+};
+
+// ── Textarea auto-grow ────────────────────────────────────────
+window.pmGrow = function(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+};
+
+// ── Check for unread messages on app load ─────────────────────
+// Called after patient logs in — updates the unread dot
+window.pmCheckUnread = async function() {
+  if (!patient || !patient.id) return;
+  try {
+    var threads = await pmSb('/message_threads?patient_id=eq.' + patient.id + '&unread_patient=eq.true&limit=1');
+    var dot = document.getElementById('msg-unread-dot');
+    if (dot && threads && threads.length) dot.classList.add('show');
+  } catch(e) {}
+};
+
+})();
+</script>
+</body>
+</html>
